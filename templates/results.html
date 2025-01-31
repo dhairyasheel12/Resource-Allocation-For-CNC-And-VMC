@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Allocation Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fff;
+            color: #333;
+        }
+
+        header {
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin: 0;
+            padding-left: 15px;
+            font-weight: bolder;
+            color: #fff;
+        }
+
+        header img {
+            height: 70px;
+            margin-left: 20px;
+        }
+
+        .section-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ffc107;
+        }
+
+        .section-card h3 {
+            color: #000;
+            font-weight: 600;
+            border-bottom: 2px solid #ffc107;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            margin-bottom: 0;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table thead th {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+        .btn-primary {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: #e5b93d;
+            border-color: #e5b93d;
+            color: #000;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #ffc107;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+        }
+
+        .graph-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #ffc107;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .operator-card {
+            background-color: #fff;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .score-badge {
+            background-color: #ffc107;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        #loadingSpinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: #ffc107;
+        }
+
+        .part-info {
+            background-color: #fff;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .part-numbers {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .operator-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
+        .stat-item {
+            background-color: rgba(255, 193, 7, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/">
+            <img src="/project2/static/image.png" alt="Your Logo" style="cursor: pointer;">
+        </a>
+        <h1>MAURYA INDUSTRIES</h1>
+    </header>
+
+    <div class="container">
+        <div class="section-card">
+            <h3>Part Performance Analysis</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="partSelect" class="form-label">Select Part Type:</label>
+                        <select class="form-select" id="partSelect">
+                            <option value="">Choose a part type...</option>
+                            {% for part in parts_list %}
+                            <option value="{{ part }}">{{ part }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mt-3" id="subpartSelectDiv" style="display: none;">
+                        <label for="subpartSelect" class="form-label">Select Sub-Part:</label>
+                        <select class="form-select" id="subpartSelect">
+                            <option value="">Choose a sub-part...</option>
+                        </select>
+                    </div>
+
+                    <div id="topOperators" class="mt-4" style="display: none;">
+                        <h5 class="fw-bold mb-3">Top Performing Operators</h5>
+                        <div id="topOperatorsList"></div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="graph-container">
+                        <div id="loadingSpinner" style="display: none;">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="graphPlaceholder" class="text-center text-muted">
+                            Select a part type and sub-part to view operator performance
+                        </div>
+                        <img id="performanceGraph" src="" alt="Performance Graph" style="display: none; width: 100%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3>Enter Absence List</h3>
+            <form id="absenceForm">
+                <div class="form-group">
+                    <label for="absent_operators">Absentee Operators (comma separated):</label>
+                    <input type="text" class="form-control" id="absent_operators" name="absent_operators" 
+                           placeholder="Enter operator names...">
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Update Allocations</button>
+            </form>
+        </div>
+
+        <div class="section-card">
+            <h3>Current Allocations</h3>
+            <div class="table-responsive">
+                <div id="dynamic_allocations">
+                    {{ initial_dynamic_allocations | safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3>Operator vs Part Matrix</h3>
+            <div class="table-responsive">
+                {{ operator_vs_part | safe }}
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3>Operator vs Operation Matrix</h3>
+            <div class="table-responsive">
+                {{ operator_vs_operation | safe }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#partSelect').on('change', function() {
+                const selectedPart = $(this).val();
+                const subpartDiv = $('#subpartSelectDiv');
+                const subpartSelect = $('#subpartSelect');
+                
+                // Reset UI elements
+                $('#graphPlaceholder').show();
+                $('#performanceGraph').hide();
+                $('#topOperators').hide();
+                subpartDiv.hide();
+                subpartSelect.html('<option value="">Choose a sub-part...</option>');
+
+                if (!selectedPart) return;
+
+                // Get sub-parts for selected part
+                $.ajax({
+                    url: '/project2/get_subparts',
+                    method: 'POST',
+                    data: { 'part': selectedPart },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            response.subparts.forEach(subpart => {
+                                subpartSelect.append(`
+                                    <option value="${subpart}">${subpart}</option>
+                                `);
+                            });
+                            subpartDiv.fadeIn();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Error loading sub-parts');
+                    }
+                });
+            });
+
+            $('#subpartSelect').on('change', function() {
+                const selectedSubpart = $(this).val();
+                const selectedPart = $('#partSelect').val();
+
+                if (!selectedSubpart || !selectedPart) {
+                    $('#graphPlaceholder').show();
+                    $('#performanceGraph').hide();
+                    $('#topOperators').hide();
+                    return;
+                }
+
+                $('#graphPlaceholder').hide();
+                $('#performanceGraph').hide();
+                $('#loadingSpinner').show();
+                $('#topOperators').hide();
+
+                $.ajax({
+                    url: '/project2/get_part_performance',
+                    method: 'POST',
+                    data: { 
+                        'part': selectedPart,
+                        'subpart': selectedSubpart 
+                    },
+                    success: function(response) {
+                        $('#loadingSpinner').hide();
+                        if (response.status === 'success') {
+                            // Update graph
+                            $('#performanceGraph')
+                                .attr('src', response.graph)
+                                .fadeIn();
+
+                            // Update top operators list
+                            const topOperatorsList = $('#topOperatorsList');
+                            topOperatorsList.empty();
+                            response.top_operators.forEach((op, index) => {
+                                const medals = ['🥇', '🥈', '🥉'];
+                                topOperatorsList.append(`
+                                    <div class="operator-card">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>${medals[index]} ${op.operator}</span>
+                                            <span class="score-badge">${op.score}</span>
+                                        </div>
+                                        <div class="operator-stats">
+                                            <div class="stat-item">
+                                                <div class="stat-label">Quality</div>
+                                                <div>${op.quality_rate}</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-label">Performance</div>
+                                                <div>${op.performance_rate}</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-label">Availability</div>
+                                                <div>${op.availability}</div>
+                                            </div>
+                                        </div>
+                                        <div class="operator-stats mt-2">
+                                            <div class="stat-item w-100">
+                                                <div class="stat-label">Experience</div>
+                                                <div>${op.experience}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                            $('#topOperators').fadeIn();
+                        } else {
+                            $('#graphPlaceholder').show().text('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        $('#loadingSpinner').hide();
+                        $('#graphPlaceholder').show().text('Error loading data. Please try again.');
+                    }
+                });
+            });
+
+            $('#absenceForm').on('submit', function(e) {
+                e.preventDefault();
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true)
+                    .html('<span class="spinner-border spinner-border-sm"></span> Updating...');
+
+                $.ajax({
+                    url: '/project2/update_allocations',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $('#dynamic_allocations').html(response.html);
+                            alert('Allocations updated successfully!');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Error updating allocations');
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).text('Update Allocations');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
